@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rönk Generátor</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+    input, button { margin: 5px; padding: 10px; font-size: 16px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+  </style>
+</head>
+<body>
+  <h2>Rönk Generátor</h2>
+  <label>4,1 m darabszám: <input type="number" id="count41" /></label><br>
+  <label>3,1 m darabszám: <input type="number" id="count31" /></label><br>
+  <label>Összes köbméter: <input type="number" id="totalVolume" step="0.01" /></label><br>
+  <button onclick="generateLogs()">Generálás</button>
+
+  <div id="output"></div>
+
+  <script>
+    function calculateVolume(length, diameter) {
+      return Math.PI * Math.pow(diameter / 2 / 100, 2) * length;
+    }
+
+    function generateLogs() {
+      const count41 = parseInt(document.getElementById("count41").value);
+      const count31 = parseInt(document.getElementById("count31").value);
+      const targetVolume = parseFloat(document.getElementById("totalVolume").value);
+      const logs = [];
+
+      let totalVol = 0;
+      let maxAttempts = 10000;
+
+      function generate(length, count) {
+        for (let i = 0; i < count; i++) {
+          let tries = 0;
+          while (tries < maxAttempts) {
+            const dia = Math.floor(Math.random() * 16) + 15; // 15–30 cm
+            const vol = calculateVolume(length, dia);
+            if (totalVol + vol <= targetVolume + 0.05) {
+              logs.push({ length, dia, vol });
+              totalVol += vol;
+              break;
+            }
+            tries++;
+          }
+        }
+      }
+
+      generate(4.1, count41);
+      generate(3.1, count31);
+
+      const summary = {};
+      logs.forEach(log => {
+        const key = `${log.length} m - ${log.dia} cm`;
+        if (!summary[key]) {
+          summary[key] = { count: 0, vol: 0 };
+        }
+        summary[key].count++;
+        summary[key].vol += log.vol;
+      });
+
+      let html = `<h3>Összesített rönkök (közelítő köbméter): ${totalVol.toFixed(3)} m³</h3>`;
+      html += `<table><tr><th>Hossz</th><th>Átmérő</th><th>Darab</th><th>Össz. térfogat (m³)</th></tr>`;
+      for (const key in summary) {
+        const [len, dia] = key.split(" - ");
+        html += `<tr><td>${len}</td><td>${dia}</td><td>${summary[key].count}</td><td>${summary[key].vol.toFixed(3)}</td></tr>`;
+      }
+      html += `</table>`;
+      document.getElementById("output").innerHTML = html;
+    }
+  </script>
+</body>
+</html>
